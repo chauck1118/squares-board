@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -26,12 +26,12 @@ model User {
 }
 
 model Board {
-  id             String        @id @default(cuid())
+  id             String   @id @default(cuid())
   name           String
   pricePerSquare Float
-  status         BoardStatus   @default(OPEN)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  status         String   @default("OPEN") // OPEN, FILLED, ASSIGNED, ACTIVE, COMPLETED
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Relations
   squares         Square[]
@@ -42,14 +42,14 @@ model Board {
 }
 
 model Square {
-  id               String        @id @default(cuid())
+  id               String   @id @default(cuid())
   boardId          String
   userId           String?
-  gridPosition     Int?          // 0-99, null until board is filled and assigned
-  paymentStatus    PaymentStatus @default(PENDING)
-  winningTeamNumber Int?         // 0-9, assigned when board is filled
-  losingTeamNumber Int?          // 0-9, assigned when board is filled
-  createdAt        DateTime      @default(now())
+  gridPosition     Int?     // 0-99, null until board is filled and assigned
+  paymentStatus    String   @default("PENDING") // PENDING, PAID
+  winningTeamNumber Int?    // 0-9, assigned when board is filled
+  losingTeamNumber Int?     // 0-9, assigned when board is filled
+  createdAt        DateTime @default(now())
 
   // Relations
   board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
@@ -62,7 +62,7 @@ model Square {
 }
 
 model Game {
-  id            String     @id @default(cuid())
+  id            String   @id @default(cuid())
   boardId       String
   gameNumber    Int
   round         String
@@ -70,11 +70,11 @@ model Game {
   team2         String
   team1Score    Int?
   team2Score    Int?
-  status        GameStatus @default(SCHEDULED)
+  status        String   @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, COMPLETED
   winnerSquareId String?
   scheduledTime DateTime
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Relations
   board        Board   @relation(fields: [boardId], references: [id], onDelete: Cascade)
@@ -100,21 +100,4 @@ model PayoutStructure {
   @@map("payout_structures")
 }
 
-enum BoardStatus {
-  OPEN      // Accepting new participants
-  FILLED    // 100 squares claimed, pending assignment
-  ASSIGNED  // Squares assigned to grid positions
-  ACTIVE    // Tournament started, tracking scores
-  COMPLETED // Tournament finished
-}
 
-enum PaymentStatus {
-  PENDING // Square claimed but not paid
-  PAID    // Square paid and confirmed
-}
-
-enum GameStatus {
-  SCHEDULED   // Game not started
-  IN_PROGRESS // Game in progress
-  COMPLETED   // Game finished
-}
