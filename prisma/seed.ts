@@ -74,10 +74,11 @@ async function main() {
   // Create some sample squares (claimed by test users)
   const sampleSquares = [];
   for (let i = 0; i < 10; i++) {
+    const user = testUsers[i % testUsers.length];
     const square = await prisma.square.create({
       data: {
         boardId: sampleBoard.id,
-        userId: testUsers[i % testUsers.length].id,
+        userId: user?.id || null,
         paymentStatus: i < 5 ? 'PAID' : 'PENDING', // First 5 are paid
       },
     });
