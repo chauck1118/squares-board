@@ -5,55 +5,56 @@ inclusion: always
 # Technology Stack & Development Guidelines
 
 ## Core Technologies
-- **Backend**: Node.js 18+ with TypeScript, Express.js, PostgreSQL + Prisma ORM
+- **Backend**: AWS Amplify with GraphQL, Lambda functions, DynamoDB
 - **Frontend**: React 18 with TypeScript, Vite, Tailwind CSS
-- **Real-time**: Socket.io for live updates
-- **Authentication**: JWT tokens with bcrypt hashing
-- **Validation**: Joi schemas for all API inputs
-- **Testing**: Jest with ts-jest, Supertest for API testing
+- **Real-time**: Amplify Data subscriptions for live updates
+- **Authentication**: Amplify Auth with built-in security
+- **Validation**: Input validation in GraphQL resolvers and Lambda functions
+- **Testing**: Jest with ts-jest, Amplify testing utilities
 
 ## Code Style Requirements
-- **TypeScript**: Strict mode with explicit return types on all functions
+- **TypeScript**: Strict mode with explicit return types on ALL functions
 - **Variables**: Use `const` over `let`, never `var`
 - **Imports**: Use path aliases `@/server`, `@/shared` for clean imports
 - **Unused vars**: Prefix with `_` if needed, otherwise remove
 - **Formatting**: ESLint + Prettier enforced
 
 ## API Conventions
-- **Endpoints**: RESTful with `/api/` prefix
+- **GraphQL**: Amplify Data with auto-generated schema and resolvers
+- **REST**: Lambda functions for specific use cases
 - **Errors**: Structured format `{ error: string, code: string, timestamp: Date, path: string }`
-- **Auth**: JWT middleware for protected routes
-- **Validation**: Joi schemas for all request inputs
-- **Response**: Consistent JSON structure with proper HTTP status codes
+- **Auth**: Amplify Auth with authorization rules
+- **Validation**: Input validation in resolvers and Lambda functions
+- **Response**: Consistent GraphQL response structure with proper error handling
 
 ## Database Patterns
-- **Primary Keys**: CUID for all models
+- **Primary Keys**: Auto-generated IDs (Amplify Data default)
 - **Timestamps**: `createdAt`, `updatedAt` on all entities
 - **Enums**: Use for status fields (`BoardStatus`, `PaymentStatus`, `GameStatus`)
 - **Relations**: Cascade deletes for related records
-- **Queries**: Use Prisma client with proper error handling
+- **Queries**: Amplify Data client with proper error handling
 
 ## Testing Standards
-- **Structure**: Test files mirror source directory structure
-- **Coverage**: Test both success and error scenarios
+- **Structure**: Test files mirror source directory structure exactly
+- **Coverage**: Test both success AND error scenarios
 - **API Tests**: Use Supertest for endpoint integration tests
 - **Setup**: Use setup files for configuration and mocks
 - **Naming**: Descriptive test names with clear expectations
 
 ## Real-time Implementation
-- **Events**: Socket.io for board updates, scores, winners
-- **Validation**: Validate all socket events and handle errors
-- **Reconnection**: Implement automatic reconnection handling
+- **Subscriptions**: Amplify Data subscriptions for board updates, scores, winners
+- **Validation**: Validate ALL GraphQL operations and handle errors
+- **Reconnection**: Automatic reconnection via Amplify client
 - **Error Handling**: Graceful degradation when real-time fails
 
 ## Development Commands
 ```bash
-npm run dev              # Start both frontend and backend
+npm run dev              # Start frontend development server
+npx ampx sandbox         # Start Amplify sandbox environment
 npm test                 # Run Jest tests
 npm run lint:fix         # Fix ESLint issues
-npm run db:generate      # Generate Prisma client
-npm run db:seed          # Seed database
+npx ampx generate        # Generate Amplify client code
 ```
 
-## Port Configuration
-- Frontend: 3000, Backend: 3001, PostgreSQL: 5432, Redis: 6379
+## Service Configuration
+- Frontend: 3000, Amplify Sandbox: Auto-configured, DynamoDB: Managed by Amplify

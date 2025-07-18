@@ -13,38 +13,47 @@ The system follows a client-server architecture with real-time updates, secure a
 **Frontend:**
 - React 18 with TypeScript for type safety and modern development
 - Tailwind CSS for responsive design and mobile-first approach
-- Socket.io client for real-time score updates
+- AWS Amplify UI components for consistent design
 - React Router for client-side routing
 - React Hook Form for form management and validation
 
-**Backend:**
-- Node.js with Express.js framework
-- TypeScript for consistent type safety across the stack
-- Socket.io for real-time communication
-- JWT for secure authentication
-- bcrypt for password hashing
+**Backend (AWS Amplify):**
+- AWS Amplify for full-stack development platform
+- AWS AppSync for GraphQL API with real-time subscriptions
+- AWS Cognito for user authentication and authorization
+- AWS Lambda for serverless business logic
+- TypeScript for consistent type safety across functions
 
 **Database:**
-- PostgreSQL for relational data with ACID compliance
-- Prisma ORM for type-safe database operations
-- Redis for session management and real-time data caching
+- Amazon DynamoDB for NoSQL data storage with auto-scaling
+- AWS Amplify DataStore for offline-first data synchronization
+- DynamoDB Global Secondary Indexes for efficient querying
+
+**Real-time & Storage:**
+- AWS AppSync subscriptions for real-time updates
+- Amazon S3 for file storage (if needed for future features)
+- AWS CloudFront for global content delivery
 
 **Deployment:**
-- Docker containers for consistent deployment
-- Environment-based configuration
-- HTTPS/SSL for secure communication
+- AWS Amplify hosting for automatic CI/CD
+- Environment-based configuration with AWS Systems Manager
+- HTTPS/SSL automatically managed by AWS
 
 ### System Architecture
 
 ```mermaid
 graph TB
-    Client[React Frontend] --> API[Express API Server]
-    Client --> Socket[Socket.io Client]
-    API --> DB[(PostgreSQL Database)]
-    API --> Cache[(Redis Cache)]
-    Socket --> SocketServer[Socket.io Server]
-    SocketServer --> API
-    External[Score API] --> API
+    Client[React Frontend] --> Amplify[AWS Amplify]
+    Client --> AppSync[AWS AppSync GraphQL]
+    Client --> Cognito[AWS Cognito Auth]
+    AppSync --> Lambda[AWS Lambda Functions]
+    AppSync --> DynamoDB[(Amazon DynamoDB)]
+    Lambda --> DynamoDB
+    AppSync --> Subscriptions[Real-time Subscriptions]
+    Subscriptions --> Client
+    External[Score API] --> Lambda
+    S3[Amazon S3] --> CloudFront[AWS CloudFront]
+    CloudFront --> Client
 ```
 
 ## Components and Interfaces
@@ -75,142 +84,222 @@ graph TB
 - `PaymentManager`: Interface for marking squares as paid
 - `UserManager`: View and manage user accounts
 
-### Backend API Endpoints
+### GraphQL API Operations
 
-**Authentication Routes:**
-```
-POST /api/auth/register - User registration
-POST /api/auth/login - User authentication
-POST /api/auth/logout - Session termination
-GET /api/auth/me - Current user profile
-```
+**Authentication (AWS Cognito):**
+- User registration, login, and logout handled by AWS Cognito
+- JWT tokens automatically managed by Amplify Auth
+- User profile data synchronized with DynamoDB
 
-**Board Routes:**
-```
-GET /api/boards - List available boards
-POST /api/boards - Create new board (admin)
-GET /api/boards/:id - Get board details
-POST /api/boards/:id/claim - Claim squares on board
-PUT /api/boards/:id/assign - Trigger square assignment (admin)
-```
+**GraphQL Queries:**
+```graphql
+# List available boards
+query ListBoards {
+  listBoards {
+    items {
+      id name status totalSquares claimedSquares
+    }
+  }
+}
 
-**Admin Routes:**
-```
-GET /api/admin/boards - All boards management view
-PUT /api/admin/squares/:id/payment - Mark square as paid
-GET /api/admin/users - User management
-POST /api/admin/scores - Update game scores
-```
+# Get board details with squares
+query GetBoard($id: ID!) {
+  getBoard(id: $id) {
+    id name status squares { items { id userId gridPosition paymentStatus } }
+  }
+}
 
-**Real-time Events:**
-```
-score_update - Live score changes
-square_claimed - New square reservations
-payment_confirmed - Square payment updates
-board_filled - Board completion notifications
-winner_announced - Game result notifications
+# Get user's claimed squares
+query GetUserSquares($userId: ID!) {
+  squaresByUser(userId: $userId) {
+    items { id boardId gridPosition paymentStatus }
+  }
+}
 ```
 
-## Data Models
+**GraphQL Mutations:**
+```graphql
+# Create new board (admin only)
+mutation CreateBoard($input: CreateBoardInput!) {
+  createBoard(input: $input) {
+    id name status
+  }
+}
+
+# Claim squares on board
+mutation ClaimSquares($input: ClaimSquaresInput!) {
+  claimSquares(input: $input) {
+    squares { id userId paymentStatus }
+  }
+}
+
+# Update payment status (admin only)
+mutation UpdateSquarePayment($input: UpdateSquarePaymentInput!) {
+  updateSquarePayment(input: $input) {
+    id paymentStatus
+  }
+}
+
+# Update game scores (admin only)
+mutation UpdateGameScore($input: UpdateGameScoreInput!) {
+  updateGameScore(input: $input) {
+    id team1Score team2Score status
+  }
+}
+```
+
+**GraphQL Subscriptions (Real-time):**
+```graphql
+# Subscribe to board updates
+subscription OnBoardUpdate($boardId: ID!) {
+  onBoardUpdate(boardId: $boardId) {
+    id status squares { items { userId paymentStatus } }
+  }
+}
+
+# Subscribe to score updates
+subscription OnScoreUpdate {
+  onScoreUpdate {
+    id team1Score team2Score status winnerSquareId
+  }
+}
+
+# Subscribe to square claims
+subscription OnSquareClaimed($boardId: ID!) {
+  onSquareClaimed(boardId: $boardId) {
+    id userId gridPosition paymentStatus
+  }
+}
+```
+
+## Data Models (DynamoDB Schema)
 
 ### User Model
 ```typescript
 interface User {
-  id: string
-  email: string (unique)
+  id: string                    // Partition Key (PK)
+  email: string                 // GSI-1 PK for email lookups
   displayName: string
-  passwordHash: string
   isAdmin: boolean
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string            // ISO string format
+  updatedAt: string            // ISO string format
+  // Note: Password handled by AWS Cognito, not stored in DynamoDB
 }
 ```
 
 ### Board Model
 ```typescript
 interface Board {
-  id: string
+  id: string                    // Partition Key (PK)
   name: string
   pricePerSquare: number
   payoutStructure: PayoutStructure
   status: 'open' | 'filled' | 'assigned' | 'active' | 'completed'
-  createdAt: Date
-  updatedAt: Date
-  squares: Square[]
-  games: Game[]
+  totalSquares: number          // Always 100
+  claimedSquares: number        // Count of claimed squares
+  paidSquares: number           // Count of paid squares
+  createdAt: string            // ISO string format
+  updatedAt: string            // ISO string format
+  createdBy: string            // User ID of creator
+  // GSI-2: status (PK) + createdAt (SK) for status-based queries
 }
 ```
 
 ### Square Model
 ```typescript
 interface Square {
-  id: string
-  boardId: string
-  userId: string | null
-  gridPosition: number | null (0-99)
+  id: string                    // Partition Key (PK)
+  boardId: string              // GSI-1 PK for board-based queries
+  userId: string | null         // GSI-2 PK for user-based queries
+  gridPosition: number | null   // 0-99, assigned after board is filled
   paymentStatus: 'pending' | 'paid'
-  winningTeamNumber: number | null (0-9)
-  losingTeamNumber: number | null (0-9)
-  createdAt: Date
+  winningTeamNumber: number | null  // 0-9, assigned during random assignment
+  losingTeamNumber: number | null   // 0-9, assigned during random assignment
+  createdAt: string            // ISO string format
+  claimOrder: number           // Order in which square was claimed (1-100)
+  // GSI-1: boardId (PK) + claimOrder (SK)
+  // GSI-2: userId (PK) + createdAt (SK)
 }
 ```
 
 ### Game Model
 ```typescript
 interface Game {
-  id: string
-  boardId: string
-  gameNumber: number
-  round: string
+  id: string                    // Partition Key (PK)
+  boardId: string              // GSI-1 PK for board-based queries
+  gameNumber: number           // 1-63 for March Madness
+  round: string                // 'round1', 'round2', 'sweet16', etc.
   team1: string
   team2: string
   team1Score: number | null
   team2Score: number | null
   status: 'scheduled' | 'in_progress' | 'completed'
   winnerSquareId: string | null
-  scheduledTime: Date
+  scheduledTime: string        // ISO string format
+  completedAt: string | null   // ISO string format
+  // GSI-1: boardId (PK) + gameNumber (SK)
+  // GSI-2: status (PK) + scheduledTime (SK)
 }
 ```
 
-### PayoutStructure Model
+### PayoutStructure Model (Embedded in Board)
 ```typescript
 interface PayoutStructure {
-  round1: number    // Games 1-32
-  round2: number    // Games 33-48  
-  sweet16: number   // Games 49-56
-  elite8: number    // Games 57-60
-  final4: number    // Games 61-62
-  championship: number // Game 63
+  round1: number               // Games 1-32
+  round2: number               // Games 33-48  
+  sweet16: number              // Games 49-56
+  elite8: number               // Games 57-60
+  final4: number               // Games 61-62
+  championship: number         // Game 63
 }
 ```
+
+### DynamoDB Table Design
+- **Single Table Design**: All entities in one table with composite keys
+- **Primary Key**: `PK` (Partition Key) + `SK` (Sort Key) where needed
+- **Global Secondary Indexes**:
+  - GSI-1: Entity-specific queries (boardId, userId, etc.)
+  - GSI-2: Status and time-based queries
+  - GSI-3: Email-based user lookups
 
 ## Error Handling
 
 ### Frontend Error Handling
 - Global error boundary for React component errors
-- Form validation with user-friendly error messages
-- Network error handling with retry mechanisms
-- Loading states and error states for all async operations
+- AWS Amplify error handling with automatic retry mechanisms
+- Form validation with user-friendly error messages using AWS Amplify UI
+- Loading states and error states for all GraphQL operations
+- Offline support with AWS Amplify DataStore conflict resolution
 
-### Backend Error Handling
-- Centralized error middleware for consistent error responses
-- Input validation using Joi or similar validation library
-- Database constraint error handling
-- Authentication and authorization error responses
-- Rate limiting to prevent abuse
+### Backend Error Handling (AWS Lambda)
+- AWS Lambda error handling with proper HTTP status codes
+- Input validation using AWS AppSync resolvers and schema validation
+- DynamoDB error handling for constraint violations
+- AWS Cognito authentication error responses
+- AWS AppSync automatic rate limiting and throttling
 
-### Error Response Format
+### GraphQL Error Response Format
 ```typescript
-interface ErrorResponse {
-  error: {
-    code: string
+interface GraphQLErrorResponse {
+  errors: Array<{
     message: string
-    details?: any
-  }
-  timestamp: string
-  path: string
+    locations?: Array<{ line: number; column: number }>
+    path?: Array<string | number>
+    extensions?: {
+      code: string
+      exception?: any
+    }
+  }>
+  data?: any
 }
 ```
+
+### AWS Amplify Error Categories
+- `AuthError`: Authentication and authorization failures
+- `APIError`: GraphQL API operation failures  
+- `DataStoreError`: Local data synchronization issues
+- `StorageError`: S3 file operation failures
+- `NetworkError`: Connectivity and timeout issues
 
 ## Testing Strategy
 
@@ -220,11 +309,11 @@ interface ErrorResponse {
 - **E2E Tests**: Cypress for critical user journeys
 - **Responsive Tests**: Cross-device and cross-browser testing
 
-### Backend Testing
-- **Unit Tests**: Jest for individual function and service testing
-- **Integration Tests**: Supertest for API endpoint testing
-- **Database Tests**: Test database operations with test database
-- **Socket Tests**: Testing real-time communication
+### Backend Testing (AWS Lambda)
+- **Unit Tests**: Jest for individual Lambda function testing
+- **Integration Tests**: AWS Amplify mock testing for GraphQL operations
+- **Database Tests**: DynamoDB Local for testing database operations
+- **Subscription Tests**: Testing real-time GraphQL subscriptions
 
 ### Test Coverage Goals
 - Minimum 80% code coverage for critical paths
@@ -243,20 +332,28 @@ interface ErrorResponse {
 
 ## Security Considerations
 
-### Authentication & Authorization
-- JWT tokens with appropriate expiration times
-- Password hashing using bcrypt with salt rounds
-- Role-based access control for admin functions
-- Session management with secure cookies
+### Authentication & Authorization (AWS Cognito)
+- JWT tokens automatically managed by AWS Cognito with configurable expiration
+- Password policies and multi-factor authentication support
+- Role-based access control using Cognito User Groups
+- Fine-grained permissions with AWS IAM and AppSync authorization
 
 ### Data Protection
-- Input sanitization and validation
-- SQL injection prevention through parameterized queries
-- XSS protection with content security policies
-- CORS configuration for API access control
+- Input validation through GraphQL schema and AWS AppSync resolvers
+- NoSQL injection prevention with DynamoDB parameterized operations
+- XSS protection with AWS Amplify's built-in sanitization
+- CORS automatically configured by AWS AppSync
 
-### Infrastructure Security
-- HTTPS enforcement for all communications
-- Environment variable management for secrets
-- Rate limiting on API endpoints
-- Database connection security and encryption
+### Infrastructure Security (AWS Managed)
+- HTTPS/TLS automatically enforced by AWS services
+- Environment variables securely managed by AWS Systems Manager
+- Automatic rate limiting and DDoS protection via AWS AppSync
+- VPC and network security managed by AWS
+- Data encryption at rest (DynamoDB) and in transit (all AWS services)
+- AWS CloudTrail for audit logging and compliance
+
+### AWS Amplify Security Features
+- Automatic security headers and CSP policies
+- Built-in protection against common web vulnerabilities
+- Secure by default configuration for all AWS services
+- Regular security updates managed by AWS

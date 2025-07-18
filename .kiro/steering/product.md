@@ -2,76 +2,75 @@
 inclusion: always
 ---
 
-# Product Overview
+# March Madness Squares Product Guide
 
-March Madness Squares is a web application for managing March Madness tournament betting pools using a 10x10 grid system.
+A web application for managing March Madness tournament betting pools using a 10x10 grid system.
 
-## Core Features
+## Core Business Logic
 
-- **User Management**: Registration, authentication, and user profiles
-- **Board Management**: Create and manage 100-square betting boards with configurable pricing
-- **Square Claiming**: Users can claim 0-10 squares per board with payment tracking
-- **Grid Assignment**: Random assignment of squares to grid positions once board is filled
-  - Fisher-Yates shuffle algorithm for unbiased randomization
-  - Automatic assignment trigger when 100 squares are paid
-  - Manual assignment capability for administrators
-  - Assignment validation and conflict detection
-- **Real-time Updates**: Live score tracking and winner notifications via Socket.io
-- **Payment Tracking**: Monitor payment status for each claimed square
-- **Tournament Integration**: Support for all 63 March Madness games with round-based payouts
-- **Admin Tools**: Payment management, assignment control, and validation utilities
-
-## Business Rules
-
+### Square Assignment Rules
 - Maximum 10 squares per user per board
-- Squares are randomly assigned grid positions only after all 100 squares are claimed and paid
-- Assignment uses Fisher-Yates shuffle for unbiased randomization of:
-  - Grid positions (0-99) assigned to squares
-  - Winning numbers (0-9) for top row
-  - Losing numbers (0-9) for left column
-- Payment tracking with PENDING/PAID status
+- Random assignment occurs ONLY after all 100 squares are claimed AND paid
+- Use Fisher-Yates shuffle for unbiased randomization of grid positions (0-99), winning numbers (0-9), and losing numbers (0-9)
 - Automatic assignment triggers when board reaches 100 paid squares
-- Round-based payout structure (Round 1, Round 2, Sweet 16, Elite 8, Final 4, Championship)
 - Board lifecycle: OPEN → FILLED → ASSIGNED → ACTIVE → COMPLETED
 
-## Development Guidelines
+### Payment & Payout Structure
+- Payment status: PENDING/PAID enum values
+- Round-based payouts: Round 1, Round 2, Sweet 16, Elite 8, Final 4, Championship
+- Support for all 63 March Madness games
 
-### Code Style
-- Use explicit TypeScript return types for all functions
-- Prefer const over let, never use var
-- Follow consistent error response format with error codes, messages, and timestamps
-- Use CUID for primary keys, timestamps (createdAt, updatedAt) on all models
-- Implement proper cascade deletes for related database records
+## Code Conventions
 
-### Architecture Patterns
-- RESTful API endpoints under `/api/` prefix
-- JWT authentication middleware for protected routes
-- Joi validation schemas for all request validation
-- Prisma ORM with PostgreSQL for data persistence
-- Socket.io for real-time features (board updates, score notifications)
-- React Hook Form with Joi validation for frontend forms
+### TypeScript Requirements
+- Explicit return types on ALL functions
+- Use `const` over `let`, never `var`
+- Strict mode enabled
+- No unused variables (prefix with `_` if needed)
 
-### Testing Requirements
-- Tests must mirror source directory structure
-- Use Jest with ts-jest for TypeScript support
-- API endpoints require Supertest integration tests
-- Include setup files for test configuration and mocks
-- Test both success and error scenarios for all endpoints
+### API Standards
+- GraphQL API with Amplify Data for primary operations
+- REST endpoints for specific use cases via Lambda functions
+- Structured error responses: `{ error: string, code: string, timestamp: Date, path: string }`
+- Amplify Auth for authentication and authorization
+- Input validation in resolvers and Lambda functions
 
-### Real-time Features
-- Socket.io events for board state changes, score updates, winner notifications
-- Automatic reconnection handling for client connections
-- Event validation and error handling for socket communications
+### Database Patterns
+- Auto-generated IDs for all models (Amplify Data default)
+- `createdAt`, `updatedAt` timestamps on all entities
+- Enum types for status fields (`BoardStatus`, `PaymentStatus`, `GameStatus`)
+- Cascade deletes for related records
+- Amplify Data with DynamoDB backend
 
-### Security & Validation
-- All API inputs validated with Joi schemas
-- JWT tokens for authentication with proper expiration
-- bcrypt for password hashing
-- Helmet and CORS middleware for security headers
-- Input sanitization for user-generated content
+### Real-time Implementation
+- Amplify Data subscriptions for live updates (board state, scores, winners)
+- GraphQL subscriptions with proper error handling
+- Automatic reconnection via Amplify client
 
-## Target Users
+### Testing Standards
+- Test files mirror source directory structure
+- Jest with ts-jest for TypeScript
+- Supertest for API integration tests
+- Test both success AND error scenarios
+- Setup files for configuration and mocks
 
-- Tournament betting pool organizers
-- Participants in March Madness squares pools
-- Mobile and desktop users requiring responsive design
+## Architecture Patterns
+
+### Frontend (React + TypeScript)
+- React Hook Form with Joi validation
+- Tailwind CSS for styling
+- Custom hooks for state management
+- Context providers for auth and socket connections
+
+### Backend (AWS Amplify)
+- Amplify Data with GraphQL schema
+- Lambda functions for business logic
+- Amplify Auth for user management
+- Utils: assignment algorithms, scoring logic
+- Structured resolver organization
+
+### Security Requirements
+- Amplify Auth with built-in security features
+- Input sanitization for user content
+- Authorization rules in GraphQL schema
+- Validate ALL GraphQL operations and subscriptions

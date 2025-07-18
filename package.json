@@ -4,7 +4,7 @@
   "description": "March Madness squares board web application",
   "main": "dist/server/index.js",
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev": "concurrently \"npx ampx sandbox\" \"npm run dev:client\"",
     "dev:server": "nodemon --exec ts-node src/server/index.ts",
     "dev:client": "cd client && npm run dev",
     "build": "npm run build:server && npm run build:client",
@@ -22,7 +22,10 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,json,css,md}\"",
     "db:seed": "ts-node prisma/seed.ts",
     "db:reset": "npx prisma migrate reset --force",
-    "db:generate": "npx prisma generate"
+    "db:generate": "npx prisma generate",
+    "amplify:sandbox": "npx ampx sandbox",
+    "amplify:generate": "npx ampx generate",
+    "amplify:deploy": "npx ampx deploy"
   },
   "keywords": [
     "march-madness",
@@ -33,8 +36,10 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@aws-amplify/ui-react": "^6.11.2",
     "@prisma/client": "^6.12.0",
     "@prisma/extension-accelerate": "^2.0.2",
+    "aws-amplify": "^6.15.3",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -46,6 +51,8 @@
     "socket.io": "^4.7.4"
   },
   "devDependencies": {
+    "@aws-amplify/backend": "^1.16.1",
+    "@aws-amplify/backend-cli": "^1.8.0",
     "@playwright/test": "^1.54.1",
     "@types/bcrypt": "^5.0.2",
     "@types/cors": "^2.8.17",
@@ -57,7 +64,10 @@
     "@types/supertest": "^6.0.2",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
     "@typescript-eslint/parser": "^6.15.0",
+    "aws-cdk-lib": "^2.204.0",
     "concurrently": "^8.2.2",
+    "constructs": "^10.4.2",
+    "esbuild": "^0.25.6",
     "eslint": "^8.56.0",
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
@@ -67,7 +77,8 @@
     "supertest": "^6.3.3",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
   },
   "engines": {
     "node": ">=18.0.0",

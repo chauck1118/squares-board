@@ -102,3 +102,8 @@ prisma/migrations/
 
 # Docker
 .dockerignore
+
+# amplify
+.amplify
+amplify_outputs*
+amplifyconfiguration*
