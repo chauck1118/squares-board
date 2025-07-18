@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white font-medium py-3 px-6 sm:py-2 sm:px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 touch-manipulation;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary-200 hover:bg-secondary-300 active:bg-secondary-400 text-secondary-800 font-medium py-3 px-6 sm:py-2 sm:px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:ring-offset-2 touch-manipulation;
+  }
+  
+  .input-field {
+    @apply block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-base sm:text-sm py-3 px-4 sm:py-2 sm:px-3 touch-manipulation;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6;
+  }
+  
+  /* Mobile-optimized touch targets */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] touch-manipulation;
+  }
+  
+  /* Enhanced mobile touch targets */
+  .touch-target-lg {
+    @apply min-h-[48px] min-w-[48px] touch-manipulation;
+  }
+  
+  /* Responsive text sizes */
+  .text-responsive-sm {
+    @apply text-sm sm:text-xs;
+  }
+  
+  .text-responsive-base {
+    @apply text-base sm:text-sm;
+  }
+  
+  .text-responsive-lg {
+    @apply text-lg sm:text-base;
+  }
+  
+  .text-responsive-xl {
+    @apply text-xl sm:text-lg;
+  }
+  
+  /* Mobile-optimized spacing */
+  .mobile-padding {
+    @apply px-4 py-6 sm:px-6 sm:py-8;
+  }
+  
+  .mobile-margin {
+    @apply mx-4 my-6 sm:mx-6 sm:my-8;
+  }
+  
+  /* Mobile-first grid layouts */
+  .mobile-grid {
+    @apply grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3;
+  }
+  
+  .mobile-grid-2 {
+    @apply grid grid-cols-1 gap-4 sm:grid-cols-2;
+  }
+  
+  /* Mobile-optimized forms */
+  .mobile-form {
+    @apply space-y-6 sm:space-y-4;
+  }
+  
+  .mobile-form-group {
+    @apply space-y-2 sm:space-y-1;
+  }
+  
+  /* Mobile-optimized buttons */
+  .mobile-btn-group {
+    @apply flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3;
+  }
+  
+  /* Scrollable containers for mobile */
+  .mobile-scroll {
+    @apply overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0;
+  }
+  
+  /* Mobile-optimized tables */
+  .mobile-table-wrapper {
+    @apply overflow-x-auto -mx-4 sm:mx-0;
+  }
+  
+  .mobile-table {
+    @apply min-w-full divide-y divide-gray-200;
+  }
+  
+  /* Mobile-optimized modals */
+  .mobile-modal {
+    @apply fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-end sm:items-center justify-center p-0 sm:p-4;
+  }
+  
+  .mobile-modal-content {
+    @apply relative mx-auto border w-full sm:max-w-md shadow-lg rounded-t-lg sm:rounded-lg bg-white max-h-[90vh] overflow-y-auto;
+  }
+  
+  /* Safe area handling for mobile devices */
+  .safe-area-top {
+    @apply pt-safe-top;
+  }
+  
+  .safe-area-bottom {
+    @apply pb-safe-bottom;
+  }
+}

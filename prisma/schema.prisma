@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  displayName  String
+  passwordHash String
+  isAdmin      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  squares Square[]
+
+  @@map("users")
+}
+
+model Board {
+  id             String        @id @default(cuid())
+  name           String
+  pricePerSquare Float
+  status         BoardStatus   @default(OPEN)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relations
+  squares         Square[]
+  games           Game[]
+  payoutStructure PayoutStructure?
+
+  @@map("boards")
+}
+
+model Square {
+  id               String        @id @default(cuid())
+  boardId          String
+  userId           String?
+  gridPosition     Int?          // 0-99, null until board is filled and assigned
+  paymentStatus    PaymentStatus @default(PENDING)
+  winningTeamNumber Int?         // 0-9, assigned when board is filled
+  losingTeamNumber Int?          // 0-9, assigned when board is filled
+  createdAt        DateTime      @default(now())
+
+  // Relations
+  board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  // Games where this square won
+  wonGames Game[]
+
+  @@map("squares")
+}
+
+model Game {
+  id            String     @id @default(cuid())
+  boardId       String
+  gameNumber    Int
+  round         String
+  team1         String
+  team2         String
+  team1Score    Int?
+  team2Score    Int?
+  status        GameStatus @default(SCHEDULED)
+  winnerSquareId String?
+  scheduledTime DateTime
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  board        Board   @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  winnerSquare Square? @relation(fields: [winnerSquareId], references: [id], onDelete: SetNull)
+
+  @@unique([boardId, gameNumber])
+  @@map("games")
+}
+
+model PayoutStructure {
+  id           String @id @default(cuid())
+  boardId      String @unique
+  round1       Float  // Games 1-32
+  round2       Float  // Games 33-48
+  sweet16      Float  // Games 49-56
+  elite8       Float  // Games 57-60
+  final4       Float  // Games 61-62
+  championship Float  // Game 63
+
+  // Relations
+  board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  @@map("payout_structures")
+}
+
+enum BoardStatus {
+  OPEN      // Accepting new participants
+  FILLED    // 100 squares claimed, pending assignment
+  ASSIGNED  // Squares assigned to grid positions
+  ACTIVE    // Tournament started, tracking scores
+  COMPLETED // Tournament finished
+}
+
+enum PaymentStatus {
+  PENDING // Square claimed but not paid
+  PAID    // Square paid and confirmed
+}
+
+enum GameStatus {
+  SCHEDULED   // Game not started
+  IN_PROGRESS // Game in progress
+  COMPLETED   // Game finished
+}
