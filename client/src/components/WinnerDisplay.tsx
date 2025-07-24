@@ -1,12 +1,13 @@
 import React from 'react';
-import { Game } from '../types/board';
+import { GraphQLGame, GraphQLBoard, graphqlScoringService } from '../services/graphql-scoring';
 
 interface WinnerDisplayProps {
-  recentWinners: Game[];
+  recentWinners: GraphQLGame[];
+  board?: GraphQLBoard | null;
   className?: string;
 }
 
-const WinnerDisplay: React.FC<WinnerDisplayProps> = ({ recentWinners, className = '' }) => {
+const WinnerDisplay: React.FC<WinnerDisplayProps> = ({ recentWinners, board = null, className = '' }) => {
   const formatPrice = (price: number): string => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -60,7 +61,7 @@ const WinnerDisplay: React.FC<WinnerDisplayProps> = ({ recentWinners, className 
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-900">
-                        Game #{game.gameNumber} - {game.round}
+                        Game #{game.gameNumber} - {graphqlScoringService.formatRoundName(game.round)}
                       </h4>
                       <p className="text-sm text-gray-600">
                         {game.team1} vs {game.team2}

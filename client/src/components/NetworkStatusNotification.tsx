@@ -1,8 +1,26 @@
 import React from 'react';
 import { useNetworkNotifications } from '../hooks/useNetworkStatus';
 
-const NetworkStatusNotification: React.FC = () => {
+interface NetworkStatusNotificationProps {
+  onOffline?: () => void;
+  onOnline?: () => void;
+  showDataStoreStatus?: boolean;
+}
+
+const NetworkStatusNotification: React.FC<NetworkStatusNotificationProps> = ({
+  onOffline,
+  onOnline,
+  showDataStoreStatus = true,
+}) => {
   const { showNotification, notificationMessage, dismissNotification, networkStatus } = useNetworkNotifications();
+
+  React.useEffect(() => {
+    if (!networkStatus.isOnline && onOffline) {
+      onOffline();
+    } else if (networkStatus.isOnline && networkStatus.isConnected && onOnline) {
+      onOnline();
+    }
+  }, [networkStatus.isOnline, networkStatus.isConnected, onOffline, onOnline]);
 
   if (!showNotification) {
     return null;
@@ -15,6 +33,16 @@ const NetworkStatusNotification: React.FC = () => {
       return 'bg-yellow-500 text-white';
     } else {
       return 'bg-green-500 text-white';
+    }
+  };
+
+  const getDataStoreMessage = () => {
+    if (!networkStatus.isOnline) {
+      return ' Changes will be saved locally and synced when you reconnect.';
+    } else if (!networkStatus.isConnected) {
+      return ' Attempting to sync your changes...';
+    } else {
+      return ' All changes are synced.';
     }
   };
 
@@ -48,6 +76,7 @@ const NetworkStatusNotification: React.FC = () => {
             {getIcon()}
             <span className="text-sm font-medium">
               {notificationMessage}
+              {showDataStoreStatus && getDataStoreMessage()}
             </span>
             {networkStatus.retryCount > 0 && !networkStatus.isConnected && (
               <span className="text-xs opacity-75">

@@ -2,13 +2,24 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { joiResolver } from '@hookform/resolvers/joi';
-import { apiService } from '../services/api';
-import { CreateBoardRequest } from '../types/board';
+import { createBoard } from '../services/graphql-admin';
 import { boardCreationSchema } from '../utils/validation';
-import { ErrorHandler } from '../utils/errorHandling';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import Header from './Header';
 import LoadingSpinner from './LoadingSpinner';
+
+interface CreateBoardRequest {
+  name: string;
+  pricePerSquare: number;
+  payoutStructure: {
+    round1: number;
+    round2: number;
+    sweet16: number;
+    elite8: number;
+    final4: number;
+    championship: number;
+  };
+}
 
 const BoardCreationForm: React.FC = () => {
   const navigate = useNavigate();
@@ -46,25 +57,38 @@ const BoardCreationForm: React.FC = () => {
       setServerError(null);
       clearErrors();
       
-      const response = await apiService.createBoard(data);
+      const response = await createBoard(data);
       console.log('Board created:', response);
       
       // Navigate to the admin board management page
       navigate(`/admin/boards/${response.board.id}`);
     } catch (error: any) {
-      const errorState = ErrorHandler.parseApiError(error);
+      console.error('Board creation failed:', error);
       
       // Handle specific validation errors
-      if (error.response?.status === 422 && error.response?.data?.details) {
-        const validationErrors = error.response.data.details;
-        Object.keys(validationErrors).forEach(field => {
-          setError(field as any, {
+      if (error.errors && error.errors.length > 0) {
+        const validationErrors = error.errors[0];
+        
+        if (validationErrors.message.includes('name')) {
+          setError('name', {
             type: 'server',
-            message: validationErrors[field],
+            message: validationErrors.message,
           });
-        });
+        } else if (validationErrors.message.includes('pricePerSquare')) {
+          setError('pricePerSquare', {
+            type: 'server',
+            message: validationErrors.message,
+          });
+        } else if (validationErrors.message.includes('payoutStructure')) {
+          setError('payoutStructure', {
+            type: 'server',
+            message: validationErrors.message,
+          });
+        } else {
+          setServerError(validationErrors.message || 'An error occurred while creating the board.');
+        }
       } else {
-        setServerError(errorState.message);
+        setServerError(error.message || 'An error occurred while creating the board.');
       }
     }
   };

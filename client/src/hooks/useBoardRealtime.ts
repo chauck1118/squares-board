@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useState } from 'react';
-import { useSocket } from '../contexts/SocketContext';
-import { BoardDetail, Square, Game } from '../types/board';
+import { useSubscription } from '../contexts/SubscriptionContext';
+import { Square, Game } from '../types/board';
+import { DataStore } from 'aws-amplify/datastore';
 
 interface UseBoardRealtimeProps {
   boardId: string;
@@ -13,7 +14,7 @@ interface UseBoardRealtimeProps {
 
 interface RealtimeNotification {
   id: string;
-  type: 'score_update' | 'square_claimed' | 'payment_confirmed' | 'winner_announced' | 'board_assigned';
+  type: 'score_update' | 'square_claimed' | 'payment_confirmed' | 'winner_announced' | 'board_assigned' | 'board_status_change';
   message: string;
   timestamp: string;
   data?: any;
@@ -27,20 +28,24 @@ export const useBoardRealtime = ({
   onBoardAssigned,
   onWinnerAnnounced
 }: UseBoardRealtimeProps) => {
-  const { connected, joinBoard, leaveBoard, on, off } = useSocket();
+  const { connected, joinBoard, leaveBoard, on, off } = useSubscription();
   const [notifications, setNotifications] = useState<RealtimeNotification[]>([]);
+  const [isOffline, setIsOffline] = useState(false);
 
-  // Join board room when connected
+  // Join board subscriptions when connected
   useEffect(() => {
     if (connected && boardId) {
       joinBoard(boardId);
-      console.log(`Joined board room: ${boardId}`);
+      console.log(`Joined board subscriptions: ${boardId}`);
+      setIsOffline(false);
+    } else if (!connected && boardId) {
+      setIsOffline(true);
     }
 
     return () => {
       if (boardId) {
         leaveBoard(boardId);
-        console.log(`Left board room: ${boardId}`);
+        console.log(`Left board subscriptions: ${boardId}`);
       }
     };
   }, [connected, boardId, joinBoard, leaveBoard]);
@@ -124,6 +129,20 @@ export const useBoardRealtime = ({
     }
   }, [boardId, onBoardAssigned, addNotification]);
 
+  // Board status change handler
+  const handleBoardStatusChange = useCallback((data: any) => {
+    console.log('Board status changed:', data);
+    
+    if (data.boardId === boardId) {
+      addNotification({
+        type: 'board_status_change',
+        message: `Board status changed to ${data.status}`,
+        timestamp: data.timestamp,
+        data: data.data
+      });
+    }
+  }, [boardId, addNotification]);
+
   // Winner announced handler
   const handleWinnerAnnounced = useCallback((data: any) => {
     console.log('Winner announced:', data);
@@ -132,7 +151,7 @@ export const useBoardRealtime = ({
       onWinnerAnnounced?.(data.winner);
       
       const winnerName = data.winner.square?.user?.displayName || 'Someone';
-      const payout = data.winner.payout ? `$${data.winner.payout}` : '';
+      const payout = data.winner.payout ? `${data.winner.payout}` : '';
       
       addNotification({
         type: 'winner_announced',
@@ -151,6 +170,7 @@ export const useBoardRealtime = ({
     on('square_claimed', handleSquareClaimed);
     on('payment_confirmed', handlePaymentConfirmed);
     on('board_assigned', handleBoardAssigned);
+    on('board_status_change', handleBoardStatusChange);
     on('winner_announced', handleWinnerAnnounced);
 
     return () => {
@@ -158,6 +178,7 @@ export const useBoardRealtime = ({
       off('square_claimed', handleSquareClaimed);
       off('payment_confirmed', handlePaymentConfirmed);
       off('board_assigned', handleBoardAssigned);
+      off('board_status_change', handleBoardStatusChange);
       off('winner_announced', handleWinnerAnnounced);
     };
   }, [
@@ -166,10 +187,39 @@ export const useBoardRealtime = ({
     handleSquareClaimed,
     handlePaymentConfirmed,
     handleBoardAssigned,
+    handleBoardStatusChange,
     handleWinnerAnnounced,
     on,
     off
   ]);
+
+  // Set up DataStore sync listeners for offline support
+  useEffect(() => {
+    if (!boardId) return;
+    
+    // Listen for network status changes
+    const handleNetworkChange = () => {
+      setIsOffline(!navigator.onLine);
+      
+      if (navigator.onLine) {
+        // When coming back online, trigger a DataStore sync
+        DataStore.start().catch(error => {
+          console.error('Failed to restart DataStore:', error);
+        });
+      }
+    };
+    
+    window.addEventListener('online', handleNetworkChange);
+    window.addEventListener('offline', handleNetworkChange);
+    
+    // Initial check
+    setIsOffline(!navigator.onLine);
+    
+    return () => {
+      window.removeEventListener('online', handleNetworkChange);
+      window.removeEventListener('offline', handleNetworkChange);
+    };
+  }, [boardId]);
 
   // Clear notifications
   const clearNotifications = useCallback(() => {
@@ -183,6 +233,7 @@ export const useBoardRealtime = ({
 
   return {
     connected,
+    isOffline,
     notifications,
     clearNotifications,
     removeNotification

@@ -1,0 +1,39 @@
+version: 1
+backend:
+  phases:
+    build:
+      commands:
+        - npm ci
+        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - cd client
+        - npm ci
+    build:
+      commands:
+        - cd client
+        - npm run build
+  artifacts:
+    baseDirectory: client/dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - client/node_modules/**/*
+test:
+  phases:
+    preTest:
+      commands:
+        - npm ci
+        - cd client && npm ci
+    test:
+      commands:
+        - npm run test:amplify
+        - npm run test:e2e
+  artifacts:
+    baseDirectory: test-results
+    files:
+      - '**/*'

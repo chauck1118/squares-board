@@ -1,14 +1,14 @@
 import React from 'react';
-import { Game, PayoutStructure } from '../types/board';
+import { GraphQLGame, GraphQLBoard, graphqlScoringService } from '../services/graphql-scoring';
 
 interface ScoringTableProps {
-  games: Game[];
-  payoutStructure: PayoutStructure | null;
+  games: GraphQLGame[];
+  board: GraphQLBoard | null;
   className?: string;
   realtimeUpdates?: string[]; // Game IDs that have recent updates
 }
 
-const ScoringTable: React.FC<ScoringTableProps> = ({ games, payoutStructure, className = '', realtimeUpdates = [] }) => {
+const ScoringTable: React.FC<ScoringTableProps> = ({ games, board, className = '', realtimeUpdates = [] }) => {
   const formatPrice = (price: number): string => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -43,18 +43,7 @@ const ScoringTable: React.FC<ScoringTableProps> = ({ games, payoutStructure, cla
   };
 
   const getRoundPayout = (round: string): number => {
-    if (!payoutStructure) return 0;
-    
-    const roundPayouts: Record<string, number> = {
-      'Round 1': payoutStructure.round1,
-      'Round 2': payoutStructure.round2,
-      'Sweet 16': payoutStructure.sweet16,
-      'Elite 8': payoutStructure.elite8,
-      'Final 4': payoutStructure.final4,
-      'Championship': payoutStructure.championship,
-    };
-
-    return roundPayouts[round] || 0;
+    return graphqlScoringService.calculatePayout(round, board?.payoutStructure || null);
   };
 
   const formatScore = (team1Score: number | null, team2Score: number | null): string => {
@@ -71,18 +60,19 @@ const ScoringTable: React.FC<ScoringTableProps> = ({ games, payoutStructure, cla
     return `${team1Score % 10}-${team2Score % 10}`;
   };
 
-  const groupGamesByRound = (games: Game[]) => {
+  const groupGamesByRound = (games: GraphQLGame[]) => {
     const grouped = games.reduce((acc, game) => {
-      if (!acc[game.round]) {
-        acc[game.round] = [];
+      const roundName = graphqlScoringService.formatRoundName(game.round);
+      if (!acc[roundName]) {
+        acc[roundName] = [];
       }
-      acc[game.round].push(game);
+      acc[roundName].push(game);
       return acc;
-    }, {} as Record<string, Game[]>);
+    }, {} as Record<string, GraphQLGame[]>);
 
     // Sort rounds in tournament order
     const roundOrder = ['Round 1', 'Round 2', 'Sweet 16', 'Elite 8', 'Final 4', 'Championship'];
-    const sortedRounds: Record<string, Game[]> = {};
+    const sortedRounds: Record<string, GraphQLGame[]> = {};
     
     roundOrder.forEach(round => {
       if (grouped[round]) {
@@ -120,12 +110,15 @@ const ScoringTable: React.FC<ScoringTableProps> = ({ games, payoutStructure, cla
       </div>
 
       <div className="divide-y divide-gray-200">
-        {Object.entries(groupedGames).map(([round, roundGames]) => (
+        {Object.entries(groupedGames).map(([round, roundGames]) => {
+          // Get the original round enum for payout calculation
+          const originalRound = roundGames[0]?.round || '';
+          return (
           <div key={round} className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-md font-medium text-gray-900">{round}</h3>
               <span className="text-sm font-medium text-green-600">
-                {formatPrice(getRoundPayout(round))} per winner
+                {formatPrice(getRoundPayout(originalRound))} per winner
               </span>
             </div>
 
@@ -201,11 +194,9 @@ const ScoringTable: React.FC<ScoringTableProps> = ({ games, payoutStructure, cla
                               Position {game.winnerSquare.gridPosition}
                             </div>
                           )}
-                          {game.payout && (
-                            <div className="text-xs font-medium text-green-600 mt-1">
-                              {formatPrice(game.payout)}
-                            </div>
-                          )}
+                          <div className="text-xs font-medium text-green-600 mt-1">
+                            {formatPrice(getRoundPayout(game.round))}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -295,11 +286,9 @@ const ScoringTable: React.FC<ScoringTableProps> = ({ games, payoutStructure, cla
                                 Position {game.winnerSquare.gridPosition}
                               </span>
                             )}
-                            {game.payout && (
-                              <span className="text-xs font-medium text-green-600 ml-4">
-                                {formatPrice(game.payout)}
-                              </span>
-                            )}
+                            <span className="text-xs font-medium text-green-600 ml-4">
+                              {formatPrice(getRoundPayout(game.round))}
+                            </span>
                           </div>
                         ) : game.status === 'COMPLETED' ? (
                           <span className="text-gray-400">No winner</span>
@@ -314,7 +303,8 @@ const ScoringTable: React.FC<ScoringTableProps> = ({ games, payoutStructure, cla
               </table>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

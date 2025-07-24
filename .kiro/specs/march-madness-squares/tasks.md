@@ -97,7 +97,7 @@
   - Write component tests for GraphQL integration
   - _Requirements: 2.1, 2.2, 2.3, 3.1, 3.2, 3.7_
 
-- [ ] 12. Migrate squares grid to use GraphQL subscriptions
+- [x] 12. Migrate squares grid to use GraphQL subscriptions
   - Update 10x10 grid component to use GraphQL data
   - Implement real-time square claiming updates via subscriptions
   - Add user square highlighting with GraphQL user queries
@@ -105,7 +105,7 @@
   - Write tests for grid component with GraphQL integration
   - _Requirements: 4.2, 4.3, 4.4_
 
-- [ ] 13. Update scoring and winner display components
+- [x] 13. Update scoring and winner display components
   - Migrate scoring table to use GraphQL queries and subscriptions
   - Implement real-time score updates via AppSync subscriptions
   - Update winner highlighting to use GraphQL winner queries
@@ -115,7 +115,7 @@
 
 ## Phase 6: Admin Features and Error Handling
 
-- [ ] 14. Migrate admin dashboard to AWS Amplify
+- [x] 14. Migrate admin dashboard to AWS Amplify
   - Update admin dashboard to use GraphQL queries for board overview
   - Implement board creation form with GraphQL mutations
   - Create payment management interface using GraphQL operations
@@ -123,7 +123,7 @@
   - Write tests for admin functionality with AWS Amplify
   - _Requirements: 6.1, 6.2, 6.3, 6.5, 6.6, 6.7_
 
-- [ ] 15. Implement AWS Amplify error handling and validation
+- [x] 15. Implement AWS Amplify error handling and validation
   - Add comprehensive GraphQL error handling on frontend
   - Implement AWS Amplify error categories and user feedback
   - Create loading states for all GraphQL operations
@@ -133,7 +133,7 @@
 
 ## Phase 7: Testing and Deployment
 
-- [ ] 16. Create comprehensive AWS Amplify testing suite
+- [x] 16. Create comprehensive AWS Amplify testing suite
   - Write unit tests for all AWS Lambda functions
   - Create integration tests for GraphQL operations
   - Add E2E tests for complete user workflows with AWS Amplify
@@ -141,7 +141,7 @@
   - Validate mobile responsiveness with AWS Amplify hosting
   - _Requirements: All requirements integration testing_
 
-- [ ] 17. Deploy and configure AWS Amplify production environment
+- [x] 17. Deploy and configure AWS Amplify production environment
   - Set up AWS Amplify CI/CD pipeline for automatic deployments
   - Configure production AWS Cognito User Pool and DynamoDB tables
   - Set up monitoring and logging with AWS CloudWatch

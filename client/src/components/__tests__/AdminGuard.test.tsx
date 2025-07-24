@@ -1,118 +1,153 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from '../../contexts/AuthContext';
+import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import AdminGuard from '../AdminGuard';
-import { User } from '../../types/auth';
+import { fetchUserAttributes, fetchAuthSession } from 'aws-amplify/auth';
 
-import { vi } from 'vitest';
-
-// Mock the API service
-vi.mock('../../services/api', () => ({
-  apiService: {
-    getCurrentUser: vi.fn(),
-  },
+// Mock AWS Amplify Auth
+jest.mock('aws-amplify/auth', () => ({
+  fetchUserAttributes: jest.fn(),
+  fetchAuthSession: jest.fn(),
 }));
 
-const mockUser: User = {
-  id: '1',
-  email: 'admin@test.com',
-  displayName: 'Admin User',
-  isAdmin: true,
-  createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-01-01T00:00:00Z',
-};
-
-const mockNonAdminUser: User = {
-  id: '2',
-  email: 'user@test.com',
-  displayName: 'Regular User',
-  isAdmin: false,
-  createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-01-01T00:00:00Z',
-};
-
-// Mock the AuthContext
-const mockAuthContext = {
-  user: null,
-  token: null,
-  login: vi.fn(),
-  register: vi.fn(),
-  logout: vi.fn(),
-  isLoading: false,
-  isAuthenticated: false,
-};
-
-vi.mock('../../contexts/AuthContext', () => ({
-  useAuth: () => mockAuthContext,
+// Mock the Navigate component
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  Navigate: () => <div data-testid="navigate">Redirecting...</div>,
 }));
-
-const TestComponent = () => <div>Admin Content</div>;
-
-const renderWithRouter = (component: React.ReactElement) => {
-  return render(
-    <BrowserRouter>
-      {component}
-    </BrowserRouter>
-  );
-};
 
 describe('AdminGuard', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
-  it('shows loading spinner when auth is loading', () => {
-    mockAuthContext.isLoading = true;
-    mockAuthContext.user = null;
-
-    renderWithRouter(
-      <AdminGuard>
-        <TestComponent />
-      </AdminGuard>
+  it('renders loading state initially', () => {
+    (fetchAuthSession as jest.Mock).mockReturnValue(new Promise(() => {}));
+    
+    render(
+      <MemoryRouter>
+        <AdminGuard>
+          <div>Protected Content</div>
+        </AdminGuard>
+      </MemoryRouter>
     );
-
-    expect(document.querySelector('.animate-spin')).toBeInTheDocument();
+    
+    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
   });
 
-  it('redirects to dashboard when user is not admin', () => {
-    mockAuthContext.isLoading = false;
-    mockAuthContext.user = mockNonAdminUser;
-
-    renderWithRouter(
-      <AdminGuard>
-        <TestComponent />
-      </AdminGuard>
+  it('renders children when user is admin by attribute', async () => {
+    (fetchAuthSession as jest.Mock).mockResolvedValue({
+      tokens: {
+        accessToken: {
+          payload: {},
+        },
+      },
+    });
+    
+    (fetchUserAttributes as jest.Mock).mockResolvedValue({
+      'custom:isAdmin': 'true',
+    });
+    
+    render(
+      <MemoryRouter>
+        <AdminGuard>
+          <div>Protected Admin Content</div>
+        </AdminGuard>
+      </MemoryRouter>
     );
-
-    // Should not render the admin content
-    expect(screen.queryByText('Admin Content')).not.toBeInTheDocument();
+    
+    await waitFor(() => {
+      expect(screen.getByText('Protected Admin Content')).toBeInTheDocument();
+    });
   });
 
-  it('redirects to dashboard when user is null', () => {
-    mockAuthContext.isLoading = false;
-    mockAuthContext.user = null;
-
-    renderWithRouter(
-      <AdminGuard>
-        <TestComponent />
-      </AdminGuard>
+  it('renders children when user is in admin group', async () => {
+    (fetchAuthSession as jest.Mock).mockResolvedValue({
+      tokens: {
+        accessToken: {
+          payload: {
+            'cognito:groups': ['admins'],
+          },
+        },
+      },
+    });
+    
+    (fetchUserAttributes as jest.Mock).mockResolvedValue({
+      'custom:isAdmin': 'false',
+    });
+    
+    render(
+      <MemoryRouter>
+        <AdminGuard>
+          <div>Protected Admin Content</div>
+        </AdminGuard>
+      </MemoryRouter>
     );
-
-    // Should not render the admin content
-    expect(screen.queryByText('Admin Content')).not.toBeInTheDocument();
+    
+    await waitFor(() => {
+      expect(screen.getByText('Protected Admin Content')).toBeInTheDocument();
+    });
   });
 
-  it('renders children when user is admin', () => {
-    mockAuthContext.isLoading = false;
-    mockAuthContext.user = mockUser;
-
-    renderWithRouter(
-      <AdminGuard>
-        <TestComponent />
-      </AdminGuard>
+  it('redirects when user is not admin', async () => {
+    (fetchAuthSession as jest.Mock).mockResolvedValue({
+      tokens: {
+        accessToken: {
+          payload: {
+            'cognito:groups': ['users'],
+          },
+        },
+      },
+    });
+    
+    (fetchUserAttributes as jest.Mock).mockResolvedValue({
+      'custom:isAdmin': 'false',
+    });
+    
+    render(
+      <MemoryRouter>
+        <AdminGuard>
+          <div>Protected Admin Content</div>
+        </AdminGuard>
+      </MemoryRouter>
     );
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('navigate')).toBeInTheDocument();
+    });
+  });
 
-    expect(screen.getByText('Admin Content')).toBeInTheDocument();
+  it('redirects when user is not authenticated', async () => {
+    (fetchAuthSession as jest.Mock).mockResolvedValue({
+      tokens: null,
+    });
+    
+    render(
+      <MemoryRouter>
+        <AdminGuard>
+          <div>Protected Admin Content</div>
+        </AdminGuard>
+      </MemoryRouter>
+    );
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('navigate')).toBeInTheDocument();
+    });
+  });
+
+  it('redirects when authentication check fails', async () => {
+    (fetchAuthSession as jest.Mock).mockRejectedValue(new Error('Not authenticated'));
+    
+    render(
+      <MemoryRouter>
+        <AdminGuard>
+          <div>Protected Admin Content</div>
+        </AdminGuard>
+      </MemoryRouter>
+    );
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('navigate')).toBeInTheDocument();
+    });
   });
 });

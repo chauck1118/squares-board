@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { apiService } from '../services/api';
-import { BoardPaymentStatusResponse, BoardAssignmentResponse } from '../types/board';
+import { getBoardWithPaymentStatus, updateSquarePayment, triggerBoardAssignment, validateBoardAssignments } from '../services/graphql-admin';
+import { PaymentStatus } from '../types/amplify-models';
 import Header from './Header';
+import LoadingSpinner from './LoadingSpinner';
 
 const AdminBoardManagement: React.FC = () => {
   const { id: boardId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [boardData, setBoardData] = useState<BoardPaymentStatusResponse | null>(null);
+  const [boardData, setBoardData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -24,24 +25,24 @@ const AdminBoardManagement: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await apiService.getBoardPaymentStatus(boardId);
+      const response = await getBoardWithPaymentStatus(boardId);
       setBoardData(response);
     } catch (err: any) {
       console.error('Failed to load board data:', err);
-      setError(err.response?.data?.error?.message || 'Failed to load board data. Please try again.');
+      setError(err.message || 'Failed to load board data. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePaymentStatusChange = async (squareId: string, newStatus: 'PENDING' | 'PAID') => {
+  const handlePaymentStatusChange = async (squareId: string, newStatus: PaymentStatus) => {
     try {
       setActionLoading(squareId);
-      await apiService.updateSquarePayment(squareId, newStatus);
+      await updateSquarePayment(squareId, newStatus);
       await loadBoardData(); // Reload to get updated data
     } catch (err: any) {
       console.error('Failed to update payment status:', err);
-      setError(err.response?.data?.error?.message || 'Failed to update payment status.');
+      setError(err.message || 'Failed to update payment status.');
     } finally {
       setActionLoading(null);
     }
@@ -52,13 +53,13 @@ const AdminBoardManagement: React.FC = () => {
     
     try {
       setActionLoading('assignment');
-      const response: BoardAssignmentResponse = await apiService.triggerBoardAssignment(boardId);
+      const response = await triggerBoardAssignment(boardId);
       console.log('Assignment result:', response);
       await loadBoardData(); // Reload to get updated data
       alert(`Assignment completed! ${response.message}`);
     } catch (err: any) {
       console.error('Failed to trigger assignment:', err);
-      setError(err.response?.data?.error?.message || 'Failed to trigger assignment.');
+      setError(err.message || 'Failed to trigger assignment.');
     } finally {
       setActionLoading(null);
     }
@@ -69,7 +70,7 @@ const AdminBoardManagement: React.FC = () => {
     
     try {
       setActionLoading('validation');
-      const response = await apiService.validateBoardAssignments(boardId);
+      const response = await validateBoardAssignments(boardId);
       
       if (response.valid) {
         alert('All assignments are valid!');
@@ -78,7 +79,7 @@ const AdminBoardManagement: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Failed to validate assignments:', err);
-      setError(err.response?.data?.error?.message || 'Failed to validate assignments.');
+      setError(err.message || 'Failed to validate assignments.');
     } finally {
       setActionLoading(null);
     }
@@ -90,7 +91,7 @@ const AdminBoardManagement: React.FC = () => {
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+            <LoadingSpinner size="lg" />
           </div>
         </div>
       </div>
@@ -117,7 +118,7 @@ const AdminBoardManagement: React.FC = () => {
   }
 
   const canTriggerAssignment = boardData.paymentStats.paidSquares >= 100 && 
-    ['FILLED', 'OPEN'].includes(boardData.board.status);
+    ['OPEN', 'FILLED'].includes(boardData.board.status);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -297,7 +298,7 @@ const AdminBoardManagement: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {boardData.squaresByUser.map((userSquares) => (
+                    {boardData.squaresByUser.map((userSquares: any) => (
                       <tr key={userSquares.user.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">{userSquares.user.displayName}</div>
@@ -324,17 +325,17 @@ const AdminBoardManagement: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
-                            {userSquares.squares.map((square) => (
+                            {userSquares.squares.map((square: any) => (
                               <div key={square.id} className="flex items-center space-x-1">
                                 <span className="text-xs text-gray-500">#{square.id.slice(-4)}</span>
                                 <button
                                   onClick={() => handlePaymentStatusChange(
                                     square.id, 
-                                    square.paymentStatus === 'PAID' ? 'PENDING' : 'PAID'
+                                    square.paymentStatus === PaymentStatus.PAID ? PaymentStatus.PENDING : PaymentStatus.PAID
                                   )}
                                   disabled={actionLoading === square.id}
                                   className={`px-2 py-1 text-xs font-medium rounded ${
-                                    square.paymentStatus === 'PAID'
+                                    square.paymentStatus === PaymentStatus.PAID
                                       ? 'bg-green-100 text-green-800 hover:bg-green-200'
                                       : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
                                   } disabled:opacity-50`}

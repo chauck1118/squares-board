@@ -22,7 +22,7 @@ const schema = a.schema({
     .model({
       name: a.string().required(),
       pricePerSquare: a.float().required(),
-      status: a.enum(['OPEN', 'FILLED', 'ASSIGNED', 'ACTIVE', 'COMPLETED']).default('OPEN'),
+      status: a.enum(['OPEN', 'FILLED', 'ASSIGNED', 'ACTIVE', 'COMPLETED']),
       totalSquares: a.integer().default(100),
       claimedSquares: a.integer().default(0),
       paidSquares: a.integer().default(0),
@@ -43,7 +43,7 @@ const schema = a.schema({
       boardId: a.id().required(),
       userId: a.id(),
       gridPosition: a.integer(), // 0-99, assigned after board is filled
-      paymentStatus: a.enum(['PENDING', 'PAID']).default('PENDING'),
+      paymentStatus: a.enum(['PENDING', 'PAID']),
       winningTeamNumber: a.integer(), // 0-9, assigned during random assignment
       losingTeamNumber: a.integer(), // 0-9, assigned during random assignment
       claimOrder: a.integer(), // Order in which square was claimed (1-100)
@@ -61,12 +61,12 @@ const schema = a.schema({
     .model({
       boardId: a.id().required(),
       gameNumber: a.integer().required(), // 1-63 for March Madness
-      round: a.enum(['ROUND1', 'ROUND2', 'SWEET16', 'ELITE8', 'FINAL4', 'CHAMPIONSHIP']).required(),
+      round: a.enum(['ROUND1', 'ROUND2', 'SWEET16', 'ELITE8', 'FINAL4', 'CHAMPIONSHIP']),
       team1: a.string().required(),
       team2: a.string().required(),
       team1Score: a.integer(),
       team2Score: a.integer(),
-      status: a.enum(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED']).default('SCHEDULED'),
+      status: a.enum(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED']),
       winnerSquareId: a.id(),
       scheduledTime: a.datetime().required(),
       completedAt: a.datetime(),

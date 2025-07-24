@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
@@ -13,6 +13,8 @@ import BoardCreationForm from './components/BoardCreationForm';
 import AdminBoardManagement from './components/AdminBoardManagement';
 import ErrorBoundary from './components/ErrorBoundary';
 import NetworkStatusNotification from './components/NetworkStatusNotification';
+import { AmplifyErrorToast } from './components/AmplifyErrorDisplay';
+import { AmplifyErrorState } from './utils/amplifyErrorHandling';
 
 // Dashboard component with board list
 const Dashboard: React.FC = () => {
@@ -33,12 +35,51 @@ const Dashboard: React.FC = () => {
 };
 
 function App() {
+  const [globalError, setGlobalError] = useState<AmplifyErrorState | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
+
+  const handleGlobalError = (error: AmplifyErrorState) => {
+    setGlobalError(error);
+  };
+
+  const handleOffline = () => {
+    setIsOffline(true);
+  };
+
+  const handleOnline = () => {
+    setIsOffline(false);
+  };
+
+  const dismissGlobalError = () => {
+    setGlobalError(null);
+  };
+
   return (
-    <ErrorBoundary>
+    <ErrorBoundary
+      onError={(error, errorInfo) => {
+        // Log error to monitoring service in production
+        if (process.env.NODE_ENV === 'production') {
+          console.error('Global error boundary caught:', error, errorInfo);
+          // Example: logErrorToService(error, errorInfo);
+        }
+      }}
+    >
       <AuthProvider>
         <SocketProvider>
           <Router>
-            <NetworkStatusNotification />
+            <NetworkStatusNotification 
+              onOffline={handleOffline}
+              onOnline={handleOnline}
+              showDataStoreStatus={true}
+            />
+            
+            {/* Global error toast */}
+            <AmplifyErrorToast 
+              error={globalError}
+              onDismiss={dismissGlobalError}
+              autoHideDuration={isOffline ? 0 : 5000} // Don't auto-hide when offline
+            />
+            
             <Routes>
             {/* Public routes */}
             <Route 

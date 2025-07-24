@@ -1,0 +1,169 @@
+{
+  "widgets": [
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 0,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/Lambda", "Duration", "FunctionName", "assignment"],
+          [".", ".", ".", "scoring"],
+          [".", "Errors", ".", "assignment"],
+          [".", ".", ".", "scoring"],
+          [".", "Invocations", ".", "assignment"],
+          [".", ".", ".", "scoring"]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Lambda Function Metrics",
+        "period": 300,
+        "stat": "Average"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 0,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/DynamoDB", "ConsumedReadCapacityUnits", "TableName", "MarchMadnessSquares"],
+          [".", "ConsumedWriteCapacityUnits", ".", "."],
+          [".", "ThrottledRequests", ".", "."],
+          [".", "SystemErrors", ".", "."]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "DynamoDB Metrics",
+        "period": 300,
+        "stat": "Sum"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 6,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/AppSync", "Latency"],
+          [".", "4XXError"],
+          [".", "5XXError"],
+          [".", "ConnectSuccess"],
+          [".", "ConnectClientError"],
+          [".", "ConnectServerError"]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "AppSync API Metrics",
+        "period": 300,
+        "stat": "Average"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 6,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["MarchMadnessSquares", "ActiveBoards"],
+          [".", "ActiveUsers"],
+          [".", "SquaresClaimed"],
+          [".", "PaymentsProcessed"],
+          [".", "GameScoresUpdated"],
+          [".", "WinnersCalculated"]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Application Business Metrics",
+        "period": 300,
+        "stat": "Sum"
+      }
+    },
+    {
+      "type": "log",
+      "x": 0,
+      "y": 12,
+      "width": 24,
+      "height": 6,
+      "properties": {
+        "query": "SOURCE '/aws/lambda/assignment' | SOURCE '/aws/lambda/scoring'\n| fields @timestamp, @message\n| filter @message like /ERROR/\n| sort @timestamp desc\n| limit 100",
+        "region": "us-east-1",
+        "title": "Recent Lambda Errors",
+        "view": "table"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 18,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/Amplify", "Requests"],
+          [".", "BytesDownloaded"],
+          [".", "BytesUploaded"]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Amplify Hosting Metrics",
+        "period": 300,
+        "stat": "Sum"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 18,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/Cognito", "SignInSuccesses"],
+          [".", "SignInThrottles"],
+          [".", "SignUpSuccesses"],
+          [".", "SignUpThrottles"]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Cognito Authentication Metrics",
+        "period": 300,
+        "stat": "Sum"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 18,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["MarchMadnessSquares/Backup", "BackupSuccess"],
+          [".", "BackupVerificationFailure"],
+          ["MarchMadnessSquares/DisasterRecovery", "DRTestSuccess"],
+          [".", "DRTestFailure"]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Backup & Disaster Recovery",
+        "period": 300,
+        "stat": "Sum"
+      }
+    }
+  ]
+}

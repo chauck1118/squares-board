@@ -14,11 +14,9 @@ export const auth = defineAuth({
     },
     'custom:displayName': {
       dataType: 'String',
-      required: true,
     },
     'custom:isAdmin': {
       dataType: 'Boolean',
-      required: false,
     },
   },
   groups: ['admins'],

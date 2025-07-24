@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { apiService } from '../services/api';
-import { BoardSummary } from '../types/board';
+import { listAllBoards } from '../services/graphql-admin';
+import { AmplifyBoard, BoardStatus } from '../types/amplify-models';
 import Header from './Header';
+import LoadingSpinner from './LoadingSpinner';
 
 const AdminDashboard: React.FC = () => {
-  const [boards, setBoards] = useState<BoardSummary[]>([]);
+  const [boards, setBoards] = useState<AmplifyBoard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,8 +18,8 @@ const AdminDashboard: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await apiService.getBoards();
-      setBoards(response.boards);
+      const response = await listAllBoards();
+      setBoards(response.data);
     } catch (err) {
       console.error('Failed to load boards:', err);
       setError('Failed to load boards. Please try again.');
@@ -29,15 +30,15 @@ const AdminDashboard: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'OPEN':
+      case BoardStatus.OPEN:
         return 'bg-green-100 text-green-800';
-      case 'FILLED':
+      case BoardStatus.FILLED:
         return 'bg-yellow-100 text-yellow-800';
-      case 'ASSIGNED':
+      case BoardStatus.ASSIGNED:
         return 'bg-blue-100 text-blue-800';
-      case 'ACTIVE':
+      case BoardStatus.ACTIVE:
         return 'bg-purple-100 text-purple-800';
-      case 'COMPLETED':
+      case BoardStatus.COMPLETED:
         return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -46,15 +47,15 @@ const AdminDashboard: React.FC = () => {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'OPEN':
+      case BoardStatus.OPEN:
         return 'Open';
-      case 'FILLED':
+      case BoardStatus.FILLED:
         return 'Filled';
-      case 'ASSIGNED':
+      case BoardStatus.ASSIGNED:
         return 'Assigned';
-      case 'ACTIVE':
+      case BoardStatus.ACTIVE:
         return 'Active';
-      case 'COMPLETED':
+      case BoardStatus.COMPLETED:
         return 'Completed';
       default:
         return status;
@@ -67,7 +68,7 @@ const AdminDashboard: React.FC = () => {
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+            <LoadingSpinner size="lg" />
           </div>
         </div>
       </div>
@@ -304,7 +305,7 @@ const AdminDashboard: React.FC = () => {
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">Active Boards</dt>
                     <dd className="text-lg font-medium text-gray-900">
-                      {boards.filter(b => b.status === 'ACTIVE').length}
+                      {boards.filter(b => b.status === BoardStatus.ACTIVE).length}
                     </dd>
                   </dl>
                 </div>
@@ -324,7 +325,7 @@ const AdminDashboard: React.FC = () => {
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">Pending Boards</dt>
                     <dd className="text-lg font-medium text-gray-900">
-                      {boards.filter(b => ['OPEN', 'FILLED'].includes(b.status)).length}
+                      {boards.filter(b => [BoardStatus.OPEN, BoardStatus.FILLED].includes(b.status as BoardStatus)).length}
                     </dd>
                   </dl>
                 </div>

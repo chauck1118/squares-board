@@ -13,6 +13,12 @@
     "start": "node dist/server/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:amplify": "./scripts/run-amplify-tests.sh",
+    "test:amplify:lambda": "./scripts/run-amplify-tests.sh lambda",
+    "test:amplify:graphql": "./scripts/run-amplify-tests.sh graphql",
+    "test:amplify:subscriptions": "./scripts/run-amplify-tests.sh subscriptions",
+    "test:amplify:mobile": "./scripts/run-amplify-tests.sh mobile",
+    "verify:amplify-tests": "node scripts/verify-amplify-tests.js",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
@@ -25,7 +31,10 @@
     "db:generate": "npx prisma generate",
     "amplify:sandbox": "npx ampx sandbox",
     "amplify:generate": "npx ampx generate",
-    "amplify:deploy": "npx ampx deploy"
+    "amplify:deploy": "npx ampx deploy",
+    "deploy:production": "./scripts/deploy-production.sh",
+    "validate:production": "node scripts/validate-production.js",
+    "load:test": "node scripts/load-test.js"
   },
   "keywords": [
     "march-madness",

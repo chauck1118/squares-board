@@ -1,0 +1,84 @@
+{
+  "timestamp": "2025-07-24T17:45:45.350Z",
+  "testFiles": 6,
+  "configFiles": 5,
+  "status": "unknown",
+  "details": {
+    "testFiles": [
+      {
+        "name": "Lambda Assignment Function Tests",
+        "path": "amplify/functions/assignment/__tests__/handler.test.ts",
+        "exists": true,
+        "type": "unit",
+        "framework": "jest"
+      },
+      {
+        "name": "Lambda Scoring Function Tests",
+        "path": "amplify/functions/scoring/__tests__/handler.test.ts",
+        "exists": true,
+        "type": "unit",
+        "framework": "jest"
+      },
+      {
+        "name": "GraphQL Integration Tests",
+        "path": "client/src/test/amplify-graphql-integration.test.tsx",
+        "exists": true,
+        "type": "integration",
+        "framework": "vitest"
+      },
+      {
+        "name": "GraphQL Subscriptions Tests",
+        "path": "client/src/test/amplify-subscriptions.test.tsx",
+        "exists": true,
+        "type": "integration",
+        "framework": "vitest"
+      },
+      {
+        "name": "E2E User Workflows Tests",
+        "path": "e2e/amplify-user-workflows.spec.ts",
+        "exists": true,
+        "type": "e2e",
+        "framework": "playwright"
+      },
+      {
+        "name": "Mobile Responsiveness Tests",
+        "path": "e2e/mobile-responsive.spec.ts",
+        "exists": true,
+        "type": "e2e",
+        "framework": "playwright"
+      }
+    ],
+    "configFiles": [
+      {
+        "name": "Amplify Jest Config",
+        "path": "amplify/jest.config.js",
+        "exists": true,
+        "required": true
+      },
+      {
+        "name": "Amplify Test Setup",
+        "path": "amplify/test/setup.ts",
+        "exists": true,
+        "required": true
+      },
+      {
+        "name": "Client Test Setup",
+        "path": "client/src/test/setup.ts",
+        "exists": true,
+        "required": true
+      },
+      {
+        "name": "Playwright Config",
+        "path": "playwright.config.ts",
+        "exists": true,
+        "required": true
+      },
+      {
+        "name": "Test Runner Script",
+        "path": "scripts/run-amplify-tests.sh",
+        "exists": true,
+        "required": true
+      }
+    ]
+  }
+}
